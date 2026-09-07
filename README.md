@@ -95,26 +95,6 @@ flowchart LR
 
 ## 🗓️ Linha do Tempo — Formação, Conhecimento e Trajetória
 
-```mermaid
-journey
-    title Trajetória — Lucas Tomaz Nunes
-    section Base Técnica
-      Técnico IFSul Muzambinho: 5: Lucas
-      Monitor Web 1º/2º ano: 5: Lucas
-      Lógica & Algoritmos: 5: Lucas
-    section Especialização
-      Arduino / ESP32 (C/C++): 5: Lucas
-      Python Backend + APIs SPA: 5: Lucas
-      IoT + Sensores + MQTT: 5: Lucas
-    section Produto
-      Fundação AMPLIAGRO OS: 5: Lucas
-      Bento Workspace + Offline-First: 5: Lucas
-      VMP-AI (Multi-Plataforma AI): 4: Lucas
-    section Hoje
-      Agro 5.0 + IA Local: 5: Lucas
-      SLSA L3 + Observabilidade: 4: Lucas
-```
-
 | Ano | Marco | Conhecimento consolidado |
 |-----|-------|--------------------------|
 | **2023-2024** | Ingresso IFSul Muzambinho + Monitoria Web | Base de **lógica, redes, SO, banco de dados**, ensino de HTML/CSS/JS/TS |
@@ -147,37 +127,7 @@ journey
 
 </div>
 
-### 📐 Distribuição de Saberes (estimativa ponderada por uso em produção)
-
-```mermaid
-pie showData title Arsenal por Domínio (uso real em projetos)
-    "Python / Backend & API" : 28
-    "C / C++ Embarcado (Arduino/ESP32)" : 22
-    "TypeScript / React SPA" : 18
-    "SQL / Modelagem & PostGIS" : 12
-    "Infra / Docker / Linux / MQTT" : 10
-    "IA Local / Automação Pessoal" : 10
-```
-
-```mermaid
-quadrantChart
-    title Matriz Especialidade x Paixão
-    x-axis Baixa Experiência --> Alta Experiência
-    y-axis Baixa Paixão --> Alta Paixão
-    quadrant-1 "Domine & Ame"
-    quadrant-2 "Ame & Evolua"
-    quadrant-3 "Delegue"
-    quadrant-4 "Domine sem amar"
-    "C/C++ Embarcado": [0.92, 0.95]
-    "Python Backend": [0.95, 0.93]
-    "APIs SPA + DB": [0.9, 0.88]
-    "IoT Endpoints/MQTT": [0.88, 0.96]
-    "IA Local/Edge": [0.75, 0.98]
-    "Frontend React": [0.82, 0.80]
-    "DevOps/Obs": [0.78, 0.85]
-```
-
-### 📋 Tabela completa — o que domino e onde aplico
+### 📋 Stack completo — o que domino e onde aplico
 
 | Domínio | Tecnologias & Ferramentas | Onde uso no dia a dia |
 |---|---|---|
@@ -189,122 +139,6 @@ quadrantChart
 | **Infra & Qualidade** | Docker + Compose, Caddy/Nginx, GitHub Actions, **SLSA L3 + Sigstore + SBOM (CycloneDX/SPDX) + VEX**, Prometheus/Grafana/Loki/Tempo/Pyroscope | CI/CD enterprise do Ampliagro |
 | **Testes Avançados** | Pytest, Vitest/Jest, Playwright (E2E + visual), **Stryker/mutmut (mutation) + Pact (contract) + Litmus (chaos) + k6** | Pipeline `advanced-testing.yml` |
 | **IA & Automação Local** | Python ML, ONNX, automações n8n locais, voice assistant offline, orquestração multi-modelo | VMP-AI fallback inteligente |
-
----
-
-### 🔌 Código real — como penso e entrego
-
-**1) ESP32 — Telemetria com reconexão e fila (C++)**
-```cpp
-// ESP32 - Ampliagro Field Node | C++ | MQTT + Fila Offline + Deep Sleep
-#include <WiFi.h>
-#include <PubSubClient.h>
-#include <ArduinoJson.h>
-
-#define SENSOR_PIN 34
-#define RELAY_PIN  26
-RTC_DATA_ATTR int bootCount = 0;
-
-WiFiClient espClient;
-PubSubClient mqtt(espClient);
-QueueHandle_t filaOffline;
-
-void reconnect() {
-  while (!mqtt.connected()) {
-    if (mqtt.connect("ampliagro-node-01", "ampliagro/mqtt", 1, true, "offline")) {
-      mqtt.subscribe("ampliagro/cmd/#");
-    } else delay(2000);
-  }
-}
-
-void publishTelemetria(float temp, float umid, float solo) {
-  StaticJsonDocument<256> doc;
-  doc["node"] = "talhao-07";
-  doc["t"] = temp; doc["h"] = umid; doc["soil"] = solo;
-  doc["boot"] = ++bootCount; doc["rssi"] = WiFi.RSSI();
-  char payload[256]; serializeJson(doc, payload);
-  if (!mqtt.publish("ampliagro/telemetry", payload, true)) {
-    xQueueSend(filaOffline, &payload, 0); // offline-first
-  }
-}
-
-void setup() {
-  pinMode(RELAY_PIN, OUTPUT);
-  filaOffline = xQueueCreate(20, 256);
-  WiFi.begin(WIFI_SSID, WIFI_PASS);
-  mqtt.setServer(MQTT_HOST, 1883);
-}
-
-void loop() {
-  if (!mqtt.connected()) reconnect();
-  mqtt.loop();
-  float t = analogRead(SENSOR_PIN) * 0.1;
-  publishTelemetria(t, 68.4, 42.1);
-  esp_sleep_enable_timer_wakeup(60 * 1000000); // 60s deep sleep
-  esp_deep_sleep_start();
-}
-```
-
-**2) Python — Endpoint SPA idempotente + fila Celery (Ampliagro API)**
-```python
-# Django DRF - Endpoint offline-first | idempotência + fila + audit
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
-from celery import shared_task
-import hashlib
-
-@shared_task(bind=True, max_retries=5)
-def processar_telemetria_batch(self, payloads: list):
-    for p in payloads:
-        # upsert idempotente + TimescaleDB hypertable
-        Telemetria.objects.update_or_create(
-            node_id=p["node"], ts=p["ts"],
-            defaults={"payload": p, "hash": hashlib.sha256(str(p).encode()).hexdigest()}
-        )
-
-@api_view(["POST"])
-@permission_classes([IsAuthenticated])
-def ingest_telemetria(request):
-    """
-    SPA envia lote offline (IndexedDB -> POST).
-    Header Idempotency-Key garante não duplicar em retry.
-    """
-    key = request.headers.get("Idempotency-Key")
-    if IdempotencyKey.objects.filter(key=key).exists():
-        return Response({"status": "replayed"}, status=200)
-
-    payloads = request.data.get("batch", [])
-    processar_telemetria_batch.delay(payloads)
-    IdempotencyKey.objects.create(key=key, user=request.user)
-    return Response({"queued": len(payloads)}, status=202)
-```
-
-**3) TypeScript — Hook SPA offline-first (React + IndexedDB)**
-```ts
-// React SPA - Ampliagro Bento Workspace | TanStack Query + IndexedDB
-import { useMutation, useQueryClient } from "@tanstack/react-query"
-import { db } from "@/lib/db-indexed" // dexie
-
-export function useSyncTelemetria() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (batch: unknown[]) => {
-      const res = await fetch("/api/telemetry/ingest", {
-        method: "POST",
-        headers: { "Idempotency-Key": crypto.randomUUID(), "Content-Type": "application/json" },
-        body: JSON.stringify({ batch }),
-      })
-      if (!res.ok) throw new Error("sync_failed")
-      return res.json()
-    },
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["telemetria"] }),
-    onError: async (_e, batch) => {
-      // sem internet? persiste local e tenta depois
-      await db.fila.add({ batch, createdAt: Date.now(), retries: 0 })
-    },
-  })
-}
-```
 
 ---
 
@@ -325,56 +159,6 @@ export function useSyncTelemetria() {
 <img src="https://github-readme-activity-graph.vercel.app/graph?username=luck-of-luck&bg_color=1A1A2E&color=FFFFFF&line=FF6B35&point=FFFFFF&area=true&area_color=FF6B35&hide_border=false&border_color=0F3460&custom_title=Atividade%20de%20Contribui%C3%A7%C3%B5es%20%E2%80%94%20%C3%BAltimos%2030%20dias" width="98%" alt="activity graph" />
 
 </div>
-
-### 🔀 Histórico de evolução (GitGraph — como construí meu stack)
-
-```mermaid
-gitGraph
-   commit id: "Olá Mundo - Lógica" tag: "2023"
-   commit id: "IFSul - Redes & SO"
-   commit id: "Monitor Web - Ensinar é aprender"
-   branch iot
-   commit id: "Arduino Uno - Sensores"
-   commit id: "ESP32 - MQTT & Telemetria"
-   commit id: "C/C++ - Controle real"
-   checkout main
-   merge iot tag: "IoT Base"
-   branch backend
-   commit id: "Python - Django/FastAPI"
-   commit id: "APIs SPA Assíncronas"
-   commit id: "Postgres + PostGIS + Timescale"
-   commit id: "Celery + Redis + Filas"
-   checkout main
-   merge backend tag: "Backend Sólido"
-   branch ampliagro
-   commit id: "Bento Workspace OS"
-   commit id: "Offline-First + PWA"
-   commit id: "Dashboards NCS"
-   commit id: "Mosquitto + Timescale hypertables"
-   commit id: "VMP-AI Coordinator"
-   checkout main
-   merge ampliagro tag: "Ampliagro OS v1"
-   branch enterprise
-   commit id: "SLSA L3 + Sigstore"
-   commit id: "SBOM CycloneDX/SPDX + VEX"
-   commit id: "Mutation + Contract + Chaos"
-   commit id: "Prometheus/Grafana/Loki/Tempo"
-   checkout main
-   merge enterprise tag: "Enterprise 2026"
-```
-
-### 📦 Distribuição de commits por tipo (Conventional Commits)
-
-```mermaid
-pie showData title Commits por Tipo (últimos 200 commits)
-    "feat (features)" : 42
-    "fix (correções)" : 18
-    "docs" : 12
-    "refactor" : 10
-    "test (mut/contract/e2e)" : 8
-    "chore/infra" : 6
-    "perf" : 4
-```
 
 ---
 
