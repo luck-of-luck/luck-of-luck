@@ -48,46 +48,11 @@ Minha obsessão é **transformar campo em sistema operacional**: telemetria real
 Formação técnica integral que me deu **base de hardware + software + redes + lógica**. Lá aprendi que **engenharia não é framework da moda, é contrato com o mundo físico**: sensor mente, rede cai, energia oscila — seu código precisa continuar correto. Essa escola me moldou para projetar **sistemas que degradam graciosamente** e **nunca perdem dados**.
 
 ### Princípios que carrego
-
-```mermaid
-mindmap
-  root((Engenharia Lucas))
-    Lógica
-      Contratos claros
-      Estados finitos
-      Falha como caso de uso
-    Automação
-      Endpoints idempotentes
-      Filas e retries
-      Observabilidade
-    IoT
-      Edge primeiro
-      Offline-first
-      Telemetria real
-    IA Local
-      Modelos pequenos úteis
-      Sem dependência de nuvem
-      Privacidade por padrão
-    Produto
-      Bento Workspace OS
-      Acessibilidade rural
-      Performance obsessiva
-```
-
-```mermaid
-flowchart LR
-    A[Sensor / Placa] -->|C/C++| B[ESP32 / Arduino]
-    B -->|MQTT / Serial| C[Gateway Python]
-    C -->|Celery + Redis| D[API Django SPA]
-    D -->|PostGIS + TimescaleDB| E[(PostgreSQL)]
-    D -->|WebSocket| F[React SPA Offline-First]
-    F -->|PWA + IndexedDB| G[Campo sem internet]
-    C -->|IA Local| H[Automações]
-    H -->|Atuadores| A
-    style B fill:#00979D,stroke:#fff,color:#fff
-    style D fill:#0F3460,stroke:#FF6B35,color:#fff
-    style F fill:#FF6B35,stroke:#0F3460,color:#fff
-```
+- **Lógica:** contratos claros, estados finitos, falha como caso de uso
+- **Automação:** endpoints idempotentes, filas e retries, observabilidade
+- **IoT:** edge primeiro, offline-first, telemetria real
+- **IA Local:** modelos pequenos úteis, sem dependência de nuvem, privacidade por padrão
+- **Produto:** Bento Workspace OS, acessibilidade rural, performance obsessiva
 
 > **"Se o sistema só funciona com internet boa, ele não funciona para o agro."** — por isso tudo que desenho é **offline-first, fila-compatível e auditável**.
 
@@ -181,41 +146,6 @@ flowchart LR
 | **Segurança & Compliance** | Trivy, TruffleHog, Bandit, Safety, dependência, CLA/DCO, export-control |
 | **DX & Gov** | DevContainer + Codespaces, Docusaurus v3, RFC/ADR, contributor ladder, mentorship |
 
-```mermaid
-flowchart TD
-    subgraph Edge["🌱 Campo (Edge)"]
-        S1[ESP32 Solo]
-        S2[Arduino Estufa]
-        S3[LoRa Gateway]
-    end
-    subgraph Core["🧠 Ampliagro Core"]
-        MQTT[Mosquitto]
-        API[Django API SPA]
-        CEL[Celery Workers]
-        DB[(Postgres<br/>PostGIS+Timescale)]
-        REDIS[(Redis)]
-    end
-    subgraph App["💻 Bento Workspace"]
-        PWA[PWA React]
-        IDB[(IndexedDB)]
-        DASH[Dashboards NCS]
-    end
-    S1 --> MQTT
-    S2 --> MQTT
-    S3 --> MQTT
-    MQTT --> API
-    API --> CEL
-    CEL --> DB
-    API --> REDIS
-    API <-->|WebSocket| PWA
-    PWA <--> IDB
-    IDB -.->|sync quando volta internet| API
-    DB --> DASH
-
-    style API fill:#0F3460,stroke:#FF6B35,color:#fff
-    style PWA fill:#FF6B35,stroke:#0F3460,color:#fff
-```
-
 **Stack resumida:** `Python` `Django` `C/C++` `TypeScript` `PostGIS` `TimescaleDB` `MQTT` `React` `PWA` `SLSA L3`
 
 ---
@@ -253,16 +183,6 @@ Coordenador que implementa **fallback sagrado**: `cline/minimax → deepseek →
 > **Filosofia local-first:** rodo **IA offline** quando preciso — `Ollama` e `LM Studio` como último fallback do VMP-AI. Privacidade, custo zero e campo sem internet agradecem.
 
 </div>
-
-```mermaid
-flowchart LR
-    A[Book4 Ultra<br/>U7 155H + RTX4050] --> B[WSL2 + Docker]
-    B --> C[Ampliagro Stack]
-    B --> D[Ollama / LM Studio<br/>IA Local]
-    C --> E[Postgres/PostGIS<br/>Redis/MQTT]
-    D --> F[VMP-AI Fallback]
-    F --> G[Campo Offline]
-```
 
 ---
 
@@ -327,15 +247,7 @@ flowchart LR
 
 ### 🧭 Como prefiro trabalhar
 
-```mermaid
-flowchart LR
-    A[Você envia e-mail<br/>com contexto + objetivo] --> B[Respondo em 24h<br/>com escopo + prazo]
-    B --> C[Contrato simples<br/>+ milestone]
-    C --> D[Entrega iterativa<br/>+ demo offline-first]
-    D --> E[Documentação +<br/>treinamento]
-    style A fill:#FF6B35,stroke:#0F3460,color:#fff
-    style E fill:#0F3460,stroke:#FF6B35,color:#fff
-```
+**Fluxo:** Você envia e-mail com contexto → Respondo em 24h com escopo + prazo → Contrato simples + milestone → Entrega iterativa + demo offline-first → Documentação + treinamento
 
 **Stack de entrega:** `Git + Conventional Commits + PRs revisáveis + CI verde + docs vivas`.  
 **Compromisso:** código que **funciona sem internet, explica o porquê e pode ser mantido por outra pessoa**.
