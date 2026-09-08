@@ -96,7 +96,4 @@ Me chamo **Lucas Tomaz Nunes** — desenvolvedor **backend / edge**, freelancer 
 
 ---
 
-<div align="center">
-<img src="https://capsule-render.vercel.app/api?type=waving&color=0:0F3460,50:16213E,100:1A1A2E&height=120&section=footer&text=Desenvolvendo%20o%20futuro%20do%20Agro%205.0&fontSize=18&fontColor=FF6B35" width="100%" />
-
 </div>
